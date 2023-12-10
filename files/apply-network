@@ -1,0 +1,4 @@
+mkdir ~/.kube/
+microk8s kubectl config view --raw > ~/.kube/config
+chmod 600 ~/.kube/config
+./calicoctl apply -f /root/storm-network.yml --allow-version-mismatch
