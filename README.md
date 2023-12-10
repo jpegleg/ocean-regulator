@@ -26,6 +26,8 @@ This will form a two node cluster with each node acting as a control plane node.
 
 If we want to make the cluster larger, we can add more control plane or worker nodes.
 
+Note: the anisble play for joining the second node may report a failure even when successful.
+
 Closely related is the "storm reef cluster" ansible and microk8s code here: https://github.com/jpegleg/storm-reef-clusters
 
 The ocean-regulator ansible has a lot in common with the anisble in storm-reef. Some difference include skipping the rsyslog config and wazuh agent steps,
