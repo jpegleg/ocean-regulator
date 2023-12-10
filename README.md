@@ -38,6 +38,8 @@ To know if the calico manifest needs to be re-applied, check the wireguard keys:
 
 If there are no results, they try re-appying the storm-network.yml and waiting a minute.
 
+The ansible does not do a full system upgrade. Additional steps may be desired to include apt update and upgrade.
+
 Closely related is the "storm reef cluster" ansible and microk8s code here: https://github.com/jpegleg/storm-reef-clusters
 
 The ocean-regulator ansible has a lot in common with the anisble in storm-reef. Some difference include skipping the rsyslog config and wazuh agent steps,
