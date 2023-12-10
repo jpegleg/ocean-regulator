@@ -1,0 +1,195 @@
+---
+- name: cluster name toggle and reboot 1
+  hosts: "{{ groups['reef'][0] }}"
+  tasks:
+
+  - name: lmg 1 hostname set
+    shell: echo "11-LMG-{{ groups['reef'][0] }}" | sed 's/\./-/g' > /etc/hostname 
+    tags: hostup
+
+  - name: copy out motd
+    copy:
+      src: files/motd
+      dest: /etc/motd
+    tags: motd
+ 
+  - name: reboot
+    ansible.builtin.reboot:
+      reboot_timeout: 3600
+    tags: reboot
+
+- name: cluster name toggle and reboot 2
+  hosts: "{{ groups['reef'][1] }}"
+  tasks:
+
+  - name: lmg 2 hostname set
+    shell: echo "12-LMG-{{ groups['reef'][1] }}" | sed 's/\./-/g' > /etc/hostname 
+    tags: hostup
+
+  - name: copy out motd
+    copy:
+      src: files/motd
+      dest: /etc/motd
+    tags: motd
+ 
+  - name: reboot
+    ansible.builtin.reboot:
+      reboot_timeout: 3600
+    tags: reboot
+
+- name: build synth reef cluster
+  hosts: reef
+  tasks:
+ 
+  - name: install snap
+    apt:
+      name: snapd
+      state: latest
+      
+  - name: install auditd
+    apt:
+      name: auditd
+      state: latest
+    tags: packages
+
+  - name: install apparmor
+    apt:
+      name: apparmor
+      state: latest
+    tags: packages
+
+  - name: install vim
+    apt:
+      name: vim
+      state: latest
+    tags: packages
+
+  - name: install tmux
+    apt:
+      name: tmux
+      state: latest
+    tags: packages
+
+  - name: install htop
+    apt:
+      name: htop
+      state: latest
+    tags: packages
+
+  - name: install wireguard
+    apt:
+      name: wireguard
+      state: latest
+    tags: packages
+
+  - name: remove ufw
+    apt:
+      name: ufw
+      state: absent
+    tags: packages
+
+  - name: disable ufw
+    shell: systemctl disable ufw && systemctl stop ufw
+    tags: packages
+
+  - name: reboot after wireguard and ufw changes
+    ansible.builtin.reboot:
+      reboot_timeout: 3600
+    tags: wire-reboot
+
+  - name: install tcpdump
+    apt:
+      name: tcpdump
+      state: latest
+    tags: packages
+
+  - name: enable and start snapd
+    shell: systemctl enable snapd && systemctl start snapd
+    args:
+      executable: /bin/bash
+    
+  - name: install microk8s snap
+    shell:  yes | snap install microk8s --classic 
+    args:
+      executable: /bin/bash
+ 
+- name: use designated control-node to get tokens
+  hosts: control-node
+  tasks:
+
+  - name: calicoctl for control plane 
+    shell: curl -L https://github.com/projectcalico/calico/releases/download/v3.26.4/calicoctl-linux-amd64 -o calicoctl
+    tags: calicoctl
+
+  - name: chmod +x calicoctl for control plane 
+    shell: chmod +x ./calicoctl
+    tags: calicoctl
+
+  - name: register control plane node add command as cadd
+    shell:  microk8s add-node | head -n2 | tail -n1
+    args:
+      executable: /bin/bash
+    register: cadd
+    tags: form
+ 
+  - name: register worker node add command as wadd
+    shell:  microk8s add-node | grep worker | tail -n1
+    args:
+      executable: /bin/bash
+    register: wadd
+    tags: form
+
+  - name: fill hostvar name
+    add_host:
+      name: "cnode"
+      CADD: "{{ cadd.stdout }}"
+      WADD: "{{ wadd.stdout }}"
+    tags: form
+
+- name: add additional control plane nodes
+  hosts: added-control-plane
+  tasks:
+
+  - name: add additional control plane nodes to the cluster
+    shell: "{{ hostvars['cnode']['CADD'] }}"
+    args:
+      executable: /bin/bash
+    tags: form
+
+- name: add worker nodes
+  hosts: workers
+  tasks:
+
+  - name: add worker nodes to the cluster
+    shell: "{{ hostvars['cnode']['WADD'] }}"
+    args:
+      executable: /bin/bash
+    tags: form
+
+- name: apply kubernetes manifests 
+  hosts: control-node
+  tasks:
+
+  - name: copy out storm-network.yml to control-node
+    copy:
+      src: files/storm-network.yml
+      dest: /root/storm-network.yml
+    tags: 
+      - form
+      - net
+
+  - name: copy out calicoctl patch script to control-node
+    copy:
+      src: files/apply-network
+      dest: /root/apply-network
+    tags: 
+      - form
+      - net
+
+  - name: apply apply-network script
+    shell: bash /root/apply-network
+    args:
+      executable: /bin/bash
+    tags: 
+      - form
+      - net
