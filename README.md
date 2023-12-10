@@ -26,7 +26,17 @@ This will form a two node cluster with each node acting as a control plane node.
 
 If we want to make the cluster larger, we can add more control plane or worker nodes.
 
-Note: the anisble play for joining the second node may report a failure even when successful.
+Important notes:
+- the anisble play for joining the second node may report a failure even when successful
+- the calico manifest may need to be additionally re-applied from the control-node: `./calicoctl apply -f storm-network.yml`
+
+To know if the calico manifest needs to be re-applied, check the wireguard keys:
+
+```
+./calicoctl get node -o yaml --allow-version-mismatch | grep Public
+```
+
+If there are no results, they try re-appying the storm-network.yml and waiting a minute.
 
 Closely related is the "storm reef cluster" ansible and microk8s code here: https://github.com/jpegleg/storm-reef-clusters
 
