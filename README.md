@@ -1,7 +1,7 @@
 # ocean-regulator
 
 Terraform (opentofu) and Ansible for building Ubuntu cloud compute virtual machines and clustering them with microk8s.
-The opentofu creates the VMs, defaulting to Seattle and New Jersey in Vultr but can be changed in the main.tf file.
+The opentofu creates the VMs, defaulting to Seattle in Vultr but can be changed in the main.tf file.
 
 The SSH key is set in the main.tf. Edit the file and replace the public key with the desired public key before use.
 
@@ -15,14 +15,16 @@ The ansible is designed to operate on one cluster at a time. Set the ansible `ho
 [reef]
 firstip
 secondip
+thirdip
 [control-node]
 firstip
 [added-control-plane]
 secondip
+thirdip
 
 ```
 
-This will form a two node cluster with each node acting as a control plane node.
+This will form a three node cluster with each node acting as a control plane node.
 
 If we want to make the cluster larger, we can add more control plane or worker nodes.
 
