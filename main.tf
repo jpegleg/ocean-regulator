@@ -17,16 +17,10 @@ resource "vultr_instance" "west-second" {
     ssh_key_ids = ["${vultr_ssh_key.enre.id}"]
 }
 
-resource "vultr_instance" "east-main" {
+resource "vultr_instance" "west-third" {
     plan = "vc2-1c-1gb"
-    region = "ewr"
+    region = "sea"
     os_id = 1743
     ssh_key_ids = ["${vultr_ssh_key.enre.id}"]
 }
 
-resource "vultr_instance" "east-second" {
-    plan = "vc2-1c-1gb"
-    region = "ewr"
-    os_id = 1743
-    ssh_key_ids = ["${vultr_ssh_key.enre.id}"]
-}
